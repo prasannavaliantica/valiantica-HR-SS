@@ -1,0 +1,146 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww28600\viewh15540\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+General\
+\'97\'97\'97\'97\
+\
+Rule 1 :  DON\'92T EVER SHARE THE ROOT PASSWORD FOR THE SYSTEM AND THE DATABASE.\
+\
+Rule 2 : Use the \'93Terminal\'94 application to open a shell to execute the commands on CentOS.   The \'93Terminal\'94 application can be\
+             launched from the panel at the bottom of the screen.\
+\
+\
+1) The workstation has CentOS 7 installed, with around 200+ GB as the available space.\
+\
+3) Upon boot up,  the CentOS prompts for the password for the user named \'91poweruser\'92 .\
+\
+4) The application can be launched locally as http://localhost/HR/,  which prompts for the username/password.\
+\
+5) From there-on, the user named \'91admin\'92 has the control to add new employee and client profiles, map employee to clients,  upload documents,\
+change password etc.,\
+\
+6) To launch the application remotely,  use the IP address of the Server.  Make sure the system is connected to the network.  \
+Launch the \'91Terminal\'92 application and execute \'91ifconfig\'92 to know the IP assigned.  \
+\
+The application can be launched locally as \'93http://<IP address>/HR\'94 \
+\
+\
+Backup\
+\'97\'97\'97\'97\
+\
+Backup is automatically done by the cron Jobs, when installed.\
+\
+1) The script at /var/HR/scripts , backup.sh is executed to save the DB to /var/HR/backups every configured no of shours.  \
+\
+2) The DB is stored as a gzip at /var/HR/backups.\
+\
+3) /var/HR/scripts, /var/HR/backups and /var/HR/uploads can be read only by the root user.\
+\
+4) \'93crontab -l\'94 lists the cron jobs for the current user. Execute this to make sure the system is setup correctly to run the cron job for the root user.\
+\
+5) To change the frequency of cron job,  do the following.\
+  \
+   (i) execute \'93crontab -e\'94 to see something like the following..\
+\
+      
+\f1\fs22 \CocoaLigature0 * * * * * cd /var/HR/scripts && ./backup.sh
+\f0\fs24 \CocoaLigature1 \
+\
+      The first star from right - day of week ( 0-6 for sunday-saturday )\
+      2 - month (1-12)\
+      3 - day of month (1-31)\
+      4 - hour of day ( 0-23)\
+      5 - min of hour ( 0-59)\
+\
+     To change it to 12 PM every day as an example,  \'93 * 12 * * * <rest of the command>\'94;\
+\
+     To set it to every 1 hour,  \'93 0  */1 * * * <rest of the command>\'94.  ( Note that */1 indicates every 1 hour - and please set the 5th one to 0 ).\
+\
+      Some examples\
+\
+       * * * * 0 <cmd> - Every Sunday\
+\
+       * * * 1 0 <cmd> - Every Sunday of January\
+ \
+       * *  10 1 *  <cmd> - Every 10th of January\
+\
+       *  1 10 1 * <cmd> - 1 AM at 10th of January every year\
+\
+       30 1 10 1 * <cmd> - 1.30 AM at 10th of January every year\
+\
+       */10 * * * * <cmd> - Every 10 minutes\
+      \
+       0 */1 * * * <cmd> - every 1 hour        ( Note the 0 preceding the hourly setting - it is mandatory )\
+\
+Restore\
+\'97\'97\'97\'97\
+\
+To restore the DB to a particular state,  please do the following.s\
+\
+1) Execute \'93su\'94 and enter the root password.\
+\
+2) Fetch the file with the .gz extension from /var/HR/backups and execute \
+		\'91gunzip <filename>.gz\'92.   \
+\
+	This will unzip the file.  Let the name of the unzipped file be \'93database.sql\'94.\
+\
+3) Execute \
+	mysql -u root -p < database.sql.\
+\
+           Enter the password for the DB   when prompted.  \
+\
+4) connect to the database as a root user as \
+	\'93mysql -u root -p\'94.  \
+\
+	Enter the password when prompted \
+\
+5) Once on the DB prompt,  execute \
+	\'91show databases\'92 \
+and make sure \'91organization\'92 is seen as one of the DBs.\
+\
+6) Execute \
+	\'91use organization\'92 \
+    to start using the organization DB.\
+\
+\
+\
+Cleanup of older DB backups\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\
+1) Another cron job to clean up the DB files older than 7 days has also been installed.  This carries the following\
+entry with the cron tab.\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf0 \CocoaLigature0 00 12 * * 1-5 cd /var/HR/scripts && ./cleanup.sh\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \CocoaLigature1 \
+2) The cleanup script deletes all the files older than 7 days as follows.\
+\
+	
+\f1\fs22 \CocoaLigature0 find . -name "database*.gz" -mtime +7 -execdir rm -rf \{\} +\
+\
+3) In case if the backup or cleanup doesn\'92t happen properly,  do those manually as follows.\
+\
+	1) su ( and provide the root password )\
+\
+	2) cd /var/HR/scripts\
+	\
+	3) ./backup.sh\
+\
+	   After execution, cd /var/HR/backups to check the files named with the appropriate time-stamp.\
+\
+	4) ./cleanup.sh\
+\
+	   After execution,  cd /var/HR/backups to check the removal of files with a timestamp older than the configured number off days.s
+\f0\fs24 \CocoaLigature1 \
+\
+Of-course, the backup and cleanup scripts can be executed manually.\
+\
+\
+}
